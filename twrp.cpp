@@ -118,7 +118,11 @@ int main(int argc, char **argv) {
 	symlink("/proc/mounts", "/etc/mtab");
 	std::string fstab_filename = "/etc/twrp.fstab";
 	if (!TWFunc::Path_Exists(fstab_filename)) {
-		fstab_filename = "/etc/recovery.fstab";
+		char bootmode[PROPERTY_VALUE_MAX] = {};
+		property_get("ro.vendor.rk.bootmode", bootmode, "emmc");
+		fstab_filename = "/etc/recovery.";
+		fstab_filename += bootmode;
+		fstab_filename += ".fstab";
 	}
 	printf("=> Processing %s\n", fstab_filename.c_str());
 	if (!PartitionManager.Process_Fstab(fstab_filename, 1)) {
