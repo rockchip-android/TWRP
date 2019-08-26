@@ -18,8 +18,8 @@ endif
 
 # If busybox does not have SELinux support, provide these tools with toolbox.
 # Note that RECOVERY_BUSYBOX_TOOLS will be empty if TW_USE_TOOLBOX == true.
-TOOLS_FOR_SELINUX := \
-    ls
+# TOOLS_FOR_SELINUX := \
+#     ls
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
     TOOLS_FOR_SELINUX += \
