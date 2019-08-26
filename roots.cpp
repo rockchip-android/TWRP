@@ -331,10 +331,11 @@ int format_volume(const char* volume, const char* directory) {
     cmd,
     "-d1",
     "-f",
-    "-O", "encrypt",
-    "-O", "quota",
-    "-O", "verity",
-    "-w", std::to_string(kSectorSize),
+    "-t",
+//    "-O", "encrypt",
+//    "-O", "quota",
+//    "-O", "verity",
+    "-w", //std::to_string(kSectorSize),
     v->blk_device,
   };
   // clang-format on
