@@ -19,6 +19,7 @@ commands_TWRP_local_path := $(LOCAL_PATH)
 TW_USE_TOOLBOX := true
 TW_NO_SCREEN_TIMEOUT := true
 RECOVERY_SDCARD_ON_DATA := true
+TW_NO_SCREEN_BLANK := true
 TW_THEME := landscape_hdpi
 
 ifdef project-path-for

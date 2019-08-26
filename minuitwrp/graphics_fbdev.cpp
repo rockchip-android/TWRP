@@ -101,6 +101,7 @@ static void set_displayed_framebuffer(unsigned n)
     vi.yres_virtual = gr_framebuffer[0].height * 2;
     vi.yoffset = n * gr_framebuffer[0].height;
     vi.bits_per_pixel = gr_framebuffer[0].pixel_bytes * 8;
+    vi.grayscale = 0;
     if (ioctl(fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
         perror("active fb swap failed");
 #ifdef TW_FBIOPAN
@@ -136,6 +137,41 @@ static GRSurface* fbdev_init(minui_backend* backend) {
         return NULL;
     }
 
+    fb_fix_screeninfo fi;
+    if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0) {
+        perror("failed to get fb0 info (FBIOGET_FSCREENINFO)");
+        close(fd);
+        return NULL;
+    }
+
+    // We print this out for informational purposes only, but
+    // throughout we assume that the framebuffer device uses an RGBX
+    // pixel format.  This is the case for every development device I
+    // have access to.  For some of those devices (eg, hammerhead aka
+    // Nexus 5), FBIOGET_VSCREENINFO *reports* that it wants a
+    // different format (XBGR) but actually produces the correct
+    // results on the display when you write RGBX.
+    //
+    // If you have a device that actually *needs* another pixel format
+    // (ie, BGRX, or 565), patches welcome...
+
+    printf("fb0 reports (possibly inaccurate):\n"
+           "  fi.line_length  = %d       fi.smem_len = %d \n"
+           "  vi.bits_per_pixel = %d\n"
+           "  vi.red.offset     = %3d   .length = %3d\n"
+           "  vi.green.offset   = %3d   .length = %3d\n"
+           "  vi.blue.offset    = %3d   .length = %3d\n",
+           fi.line_length, fi.smem_len, vi.bits_per_pixel,
+           vi.red.offset, vi.red.length,
+           vi.green.offset, vi.green.length,
+           vi.blue.offset, vi.blue.length);
+
+
+    vi.grayscale = 0;
+    if (ioctl(fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+        perror("failed to set fb0 info (FBIOPUT_VSCREENINFO)");
+    }
+
 #ifdef RECOVERY_FORCE_RGB_565
     // Changing fb_var_screeninfo can affect fb_fix_screeninfo,
     // so this needs done before querying for fi.
@@ -159,34 +195,42 @@ static GRSurface* fbdev_init(minui_backend* backend) {
         return NULL;
     }
 #endif
+#ifdef RECOVERY_FORCE_RGBA_8888
+    printf("Forcing pixel format: RGBA_8888\n");
+    vi.blue.msb_right = 0;
+    vi.green.msb_right = 0;
+    vi.red.msb_right = 0;
 
-    fb_fix_screeninfo fi;
+    //GGL_PIXEL_FORMAT_RGBX_8888
+    vi.red.offset     = 0;
+    vi.red.length     = 8;
+    vi.green.offset   = 8;
+    vi.green.length   = 8;
+    vi.blue.offset    = 16;
+    vi.blue.length    = 8;
+    vi.transp.offset  = 24;
+    vi.transp.length  = 8;
+    vi.bits_per_pixel = 32;
+    vi.nonstd = 2;
+
+    if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+        perror("failed to put force_rgba_8888 fb0 info");
+        close(fd);
+        return NULL;
+    }
+#endif
+
+    if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0) {
+        perror("failed to get fb0 info (FBIOGET_VSCREENINFO)");
+        close(fd);
+        return NULL;
+    }
+
     if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0) {
         perror("failed to get fb0 info (FBIOGET_FSCREENINFO)");
         close(fd);
         return NULL;
     }
-
-    // We print this out for informational purposes only, but
-    // throughout we assume that the framebuffer device uses an RGBX
-    // pixel format.  This is the case for every development device I
-    // have access to.  For some of those devices (eg, hammerhead aka
-    // Nexus 5), FBIOGET_VSCREENINFO *reports* that it wants a
-    // different format (XBGR) but actually produces the correct
-    // results on the display when you write RGBX.
-    //
-    // If you have a device that actually *needs* another pixel format
-    // (ie, BGRX, or 565), patches welcome...
-
-    printf("fb0 reports (possibly inaccurate):\n"
-           "  vi.bits_per_pixel = %d\n"
-           "  vi.red.offset   = %3d   .length = %3d\n"
-           "  vi.green.offset = %3d   .length = %3d\n"
-           "  vi.blue.offset  = %3d   .length = %3d\n",
-           vi.bits_per_pixel,
-           vi.red.offset, vi.red.length,
-           vi.green.offset, vi.green.length,
-           vi.blue.offset, vi.blue.length);
 
     void* bits = mmap(0, fi.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (bits == MAP_FAILED) {

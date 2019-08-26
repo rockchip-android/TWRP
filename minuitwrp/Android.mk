@@ -45,15 +45,15 @@ ifeq ($(TW_NEW_ION_HEAP), true)
   LOCAL_CFLAGS += -DNEW_ION_HEAP
 endif
 
-ifneq ($(wildcard external/libdrm/Android.bp),)
-  LOCAL_CFLAGS += -DHAS_DRM
-  LOCAL_SRC_FILES += graphics_drm.cpp
-  ifneq ($(wildcard external/libdrm/Android.common.mk),)
-    LOCAL_WHOLE_STATIC_LIBRARIES += libdrm_platform
-  else
-    LOCAL_WHOLE_STATIC_LIBRARIES += libdrm
-  endif
-endif
+# ifneq ($(wildcard external/libdrm/Android.bp),)
+#   LOCAL_CFLAGS += -DHAS_DRM
+#   LOCAL_SRC_FILES += graphics_drm.cpp
+#   ifneq ($(wildcard external/libdrm/Android.common.mk),)
+#     LOCAL_WHOLE_STATIC_LIBRARIES += libdrm_platform
+#   else
+#     LOCAL_WHOLE_STATIC_LIBRARIES += libdrm
+#   endif
+# endif
 
 LOCAL_C_INCLUDES += \
     external/libpng \
@@ -117,12 +117,14 @@ ifeq ($(subst ",,$(TARGET_RECOVERY_FORCE_PIXEL_FORMAT)),BGRA_8888)
 endif
 ifeq ($(subst ",,$(TARGET_RECOVERY_FORCE_PIXEL_FORMAT)),RGB_565)
   LOCAL_CFLAGS += -DRECOVERY_FORCE_RGB_565
+else
+  LOCAL_CFLAGS += -DRECOVERY_FORCE_RGBA_8888
 endif
 
 # This used to compare against values in double-quotes (which are just
 # ordinary characters in this context).  Strip double-quotes from the
 # value so that either will work.
-
+LOCAL_CFLAGS += -DRotateScreen_0
 ifeq ($(subst ",,$(TARGET_RECOVERY_PIXEL_FORMAT)),ABGR_8888)
   LOCAL_CFLAGS += -DRECOVERY_ABGR
 endif
