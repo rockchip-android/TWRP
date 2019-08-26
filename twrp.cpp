@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 	if (!TWFunc::Path_Exists(fstab_filename)) {
 		char bootmode[PROPERTY_VALUE_MAX] = {};
 		property_get("ro.vendor.rk.bootmode", bootmode, "emmc");
-		fstab_filename = "/etc/recovery.";
+		fstab_filename = "/etc/twrp.";
 		fstab_filename += bootmode;
 		fstab_filename += ".fstab";
 	}

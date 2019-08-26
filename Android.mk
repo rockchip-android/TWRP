@@ -16,7 +16,9 @@ LOCAL_PATH := $(call my-dir)
 commands_TWRP_local_path := $(LOCAL_PATH)
 
 # for rockpi 9.0
-TW_NO_SCREEN_TIMEOUT := 1
+TW_USE_TOOLBOX := true
+TW_NO_SCREEN_TIMEOUT := true
+RECOVERY_SDCARD_ON_DATA := true
 TW_THEME := landscape_hdpi
 
 ifdef project-path-for
@@ -493,6 +495,9 @@ ifeq ($(BOARD_CACHEIMAGE_PARTITION_SIZE),)
 LOCAL_REQUIRED_MODULES := recovery-persist recovery-refresh
 endif
 
+# for rockpi
+LOCAL_REQUIRED_MODULES += twrp.emmc.fstab twrp.sd.fstab twrp.nvme.fstab
+
 include $(BUILD_EXECUTABLE)
 
 # Symlink for file_contexts
@@ -808,7 +813,8 @@ include $(commands_TWRP_local_path)/injecttwrp/Android.mk \
     $(commands_TWRP_local_path)/simg2img/Android.mk \
     $(commands_TWRP_local_path)/adbbu/Android.mk \
     $(commands_TWRP_local_path)/twrpDigest/Android.mk \
-    $(commands_TWRP_local_path)/attr/Android.mk
+    $(commands_TWRP_local_path)/attr/Android.mk \
+    $(commands_TWRP_local_path)/vendor/Android.mk
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 24; echo $$?),0)
     include $(commands_TWRP_local_path)/libmincrypt/Android.mk

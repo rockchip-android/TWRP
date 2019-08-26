@@ -1,0 +1,13 @@
+# Android fstab file.
+#<src>                                       <mnt_point>         <type>    <mnt_flags and options>       <fs_mgr_flags>
+/dev/block/by-name/system                /system_as_root      ext4             defaults                  backup,backupname=System,display=System
+/dev/block/by-name/vendor                /vendor              ext4             defaults                  defaults
+/dev/block/by-name/oem                   /oem                 ext4             defaults                  defaults
+/dev/block/by-name/cache                 /cache               ext4             defaults                  defaults
+/dev/block/by-name/metadata              /metadata            ext4             defaults                  defaults
+/dev/block/by-name/userdata              /data                f2fs             defaults                  defaults
+/dev/block/by-name/uboot                 /uboot               emmc             defaults                  backup,backupname=Uboot,display=Uboot
+/dev/block/by-name/resource              /resource            emmc             defaults                  backup,backupname=Resource,display=Resource
+/dev/block/by-name/boot                  /boot                emmc             defaults                  backup,backupname=Boot,display=Boot
+/dev/block/by-name/recovery              /recovery            emmc             defaults                  defaults
+/dev/block/by-name/trust                 /trust               emmc             defaults                  backup,backupname=Trust,display=Trust
