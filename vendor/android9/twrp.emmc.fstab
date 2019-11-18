@@ -11,3 +11,5 @@
 /dev/block/by-name/boot                  /boot                emmc             defaults                  backup,backupname=Boot,display=Boot
 /dev/block/by-name/recovery              /recovery            emmc             defaults                  defaults
 /dev/block/by-name/trust                 /trust               emmc             defaults                  backup,backupname=Trust,display=Trust
+
+/devices/platform/usb*                   /usb                 auto             defaults                  display=Usb,storage,storagename=Usb,voldmanaged=usb:auto

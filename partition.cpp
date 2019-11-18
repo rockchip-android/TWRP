@@ -260,6 +260,7 @@ TWPartition::TWPartition() {
 	Is_Adopted_Storage = false;
 	Adopted_GUID = "";
 	SlotSelect = false;
+	Is_VoldManager = false;
 }
 
 TWPartition::~TWPartition(void) {
@@ -810,9 +811,11 @@ void TWPartition::Apply_TW_Flag(const unsigned flag, const char* str, const bool
 		case TWFLAG_VERIFY:
 		case TWFLAG_CHECK:
 		case TWFLAG_NOTRIM:
-		case TWFLAG_VOLDMANAGED:
 		case TWFLAG_RESIZE:
 			// Do nothing
+			break;
+		case TWFLAG_VOLDMANAGED:
+			Is_VoldManager = true;
 			break;
 		case TWFLAG_DISPLAY:
 			Display_Name = str;
@@ -1416,6 +1419,10 @@ bool TWPartition::Mount(bool Display_Error) {
 
 	if (Mount_Read_Only)
 		flags |= MS_RDONLY;
+
+	if(access(Mount_Point.c_str(), F_OK) != 0){
+		mkdir(Mount_Point.c_str(), 0666);
+	}
 
 	if (Fstab_File_System == "yaffs2") {
 		// mount an MTD partition as a YAFFS2 filesystem.

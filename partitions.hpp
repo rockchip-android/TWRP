@@ -246,6 +246,7 @@ private:
 	bool SlotSelect;                                                          // Partition has A/B slots
 	TWExclude backup_exclusions;                                              // Exclusions for file based backups
 	TWExclude wipe_exclusions;                                                // Exclusions for file based wipes (data/media devices only)
+	bool Is_VoldManager;
 
 	struct partition_fs_flags_struct {                                        // This struct is used to store mount flags and options for different file systems for the same partition
 		string File_System;
@@ -360,6 +361,7 @@ private:
 
 private:
 	std::vector<TWPartition*> Partitions;                                     // Vector list of all partitions
+	std::vector<TWPartition*> VoldPartitions;                                     // Vector list of auto mount partitions
 	string Active_Slot_Display;                                               // Current Active Slot (A or B) for display purposes
 };
 

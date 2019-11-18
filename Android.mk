@@ -22,6 +22,7 @@ RECOVERY_SDCARD_ON_DATA := true
 TW_NO_SCREEN_BLANK := true
 TW_THEME := landscape_hdpi
 
+PROJECT_PATH_AGREES := true
 ifdef project-path-for
     ifeq ($(LOCAL_PATH),$(call project-path-for,recovery))
         PROJECT_PATH_AGREES := true

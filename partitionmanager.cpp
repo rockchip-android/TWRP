@@ -190,7 +190,12 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 
 		TWPartition* partition = new TWPartition();
 		if (partition->Process_Fstab_Line(fstab_line, Display_Error, &twrp_flags))
-			Partitions.push_back(partition);
+			if(!partition->Is_VoldManager){
+				Partitions.push_back(partition);
+			}else{
+				LOGINFO("lili: add %s to vold\n", partition->Sysfs_Entry.c_str());
+				VoldPartitions.push_back(partition);
+			}
 		else
 			delete partition;
 
@@ -2746,7 +2751,8 @@ void TWPartitionManager::Remove_Uevent_Devices(const string& Mount_Point) {
 void TWPartitionManager::Handle_Uevent(const Uevent_Block_Data& uevent_data) {
 	std::vector<TWPartition*>::iterator iter;
 
-	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+	for (iter = VoldPartitions.begin(); iter != VoldPartitions.end(); iter++) {
+		LOGINFO("(*iter)->Sysfs_Entry = %s \n", (*iter)->Sysfs_Entry.c_str());
 		if (!(*iter)->Sysfs_Entry.empty()) {
 			string device;
 			size_t wildcard = (*iter)->Sysfs_Entry.find("*");
@@ -2756,27 +2762,70 @@ void TWPartitionManager::Handle_Uevent(const Uevent_Block_Data& uevent_data) {
 				device = (*iter)->Sysfs_Entry;
 			}
 			if (device == uevent_data.sysfs_path.substr(0, device.size())) {
-				// Found a match
-				if (uevent_data.action == "add") {
-					(*iter)->Primary_Block_Device = "/dev/block/" + uevent_data.block_device;
-					(*iter)->Alternate_Block_Device = (*iter)->Primary_Block_Device;
-					(*iter)->Is_Present = true;
-					LOGINFO("Found a match '%s' '%s'\n", uevent_data.block_device.c_str(), device.c_str());
-					if (!Decrypt_Adopted()) {
-						LOGINFO("No adopted storage so finding actual block device\n");
-						(*iter)->Find_Actual_Block_Device();
+				LOGINFO("found %s \n", device.c_str());
+				if(uevent_data.type == "partition"){
+					LOGINFO("found partition %s \n", device.c_str());
+					if (uevent_data.action == "add") {
+						LOGINFO("add partition %s \n", device.c_str());
+						TWPartition* partition = new TWPartition();
+						partition->Display_Name = (*iter)->Display_Name + "-" + uevent_data.block_device;
+						partition->Is_Storage = true;
+						partition->Is_SubPartition = true;
+						partition->Storage_Name = partition->Display_Name;
+						partition->Mount_Point = "/" + partition->Display_Name;
+						partition->SubPartition_Of = "/" + partition->Display_Name;
+						partition->Primary_Block_Device = "/dev/block/" + uevent_data.block_device;
+						partition->Alternate_Block_Device = partition->Primary_Block_Device;
+						partition->Can_Be_Mounted = true;
+						partition->Is_Present = true;
+						partition->Fstab_File_System = "auto";
+						partition->Removable = true;
+						partition->Storage_Path = partition->Mount_Point;
+						partition->Mount(true);
+						Add_Partition(partition);
+						return;
+					} else if (uevent_data.action == "remove") {
+						LOGINFO("remove partition %s \n", device.c_str());
+						string point = "/" + (*iter)->Display_Name + "-" + uevent_data.block_device;
+						Remove_Uevent_Devices(point);
+						return;
 					}
-					return;
-				} else if (uevent_data.action == "remove") {
-					(*iter)->Is_Present = false;
-					(*iter)->Primary_Block_Device = "";
-					(*iter)->Actual_Block_Device = "";
-					Remove_Uevent_Devices((*iter)->Mount_Point);
-					return;
 				}
 			}
 		}
 	}
+
+//	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+//		if (!(*iter)->Sysfs_Entry.empty()) {
+//			string device;
+//			size_t wildcard = (*iter)->Sysfs_Entry.find("*");
+//			if (wildcard != string::npos) {
+//				device = (*iter)->Sysfs_Entry.substr(0, wildcard);
+//			} else {
+//				device = (*iter)->Sysfs_Entry;
+//			}
+//			if (device == uevent_data.sysfs_path.substr(0, device.size())) {
+//				// Found a match
+//				if (uevent_data.action == "add") {
+//					(*iter)->Primary_Block_Device = "/dev/block/" + uevent_data.block_device;
+//					(*iter)->Alternate_Block_Device = (*iter)->Primary_Block_Device;
+//					(*iter)->Is_Present = true;
+//					LOGINFO("Found a match '%s' '%s'\n", uevent_data.block_device.c_str(), device.c_str());
+//					if (!Decrypt_Adopted()) {
+//						LOGINFO("No adopted storage so finding actual block device\n");
+//						(*iter)->Find_Actual_Block_Device();
+//					}
+//					return;
+//				} else if (uevent_data.action == "remove") {
+//					(*iter)->Is_Present = false;
+//					(*iter)->Primary_Block_Device = "";
+//					(*iter)->Actual_Block_Device = "";
+//					Remove_Uevent_Devices((*iter)->Mount_Point);
+//					return;
+//				}
+//			}
+//		}
+//	}
 	LOGINFO("Found no matching fstab entry for uevent device '%s' - %s\n", uevent_data.sysfs_path.c_str(), uevent_data.action.c_str());
 }
 
@@ -2858,7 +2907,7 @@ void TWPartitionManager::read_uevent() {
 		i += strlen(buf+i)+1;
 	}*/
 	Uevent_Block_Data uevent_data = get_event_block_values(buf, len);
-	if (uevent_data.subsystem == "block" && uevent_data.type == "disk") {
+	if (uevent_data.subsystem == "block") {
 		PartitionManager.Handle_Uevent(uevent_data);
 	}
 }
@@ -2911,6 +2960,7 @@ void TWPartitionManager::Coldboot_Scan(std::vector<string> *sysfs_entries, const
 void TWPartitionManager::Coldboot() {
 	std::vector<TWPartition*>::iterator iter;
 	std::vector<string> sysfs_entries;
+	std::vector<string> vold_entries;
 
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if (!(*iter)->Sysfs_Entry.empty()) {
@@ -2923,4 +2973,20 @@ void TWPartitionManager::Coldboot() {
 
 	if (sysfs_entries.size() > 0)
 		Coldboot_Scan(&sysfs_entries, "/sys/block", 0);
+
+	for (iter = VoldPartitions.begin(); iter != VoldPartitions.end(); iter++) {
+		string device;
+		size_t wildcard = (*iter)->Sysfs_Entry.find("*");
+		if (wildcard != string::npos) {
+			device = (*iter)->Sysfs_Entry.substr(0, wildcard);
+		} else {
+			device = (*iter)->Sysfs_Entry;
+		}
+
+		vold_entries.push_back(device);
+	}
+
+	if(vold_entries.size() > 0){
+		Coldboot_Scan(&vold_entries, "/sys", 0);
+	}
 }
