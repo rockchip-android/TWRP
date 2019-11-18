@@ -28,6 +28,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := external/libcxx/include external/libpng
 
+LOCAL_CFLAGS += -DTW_USE_MINUI_WITH_OPTIONAL_TOUCH_EVENTS
+
 ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
   LOCAL_CFLAGS += -DMSM_BSP
   LOCAL_SRC_FILES += graphics_overlay.cpp

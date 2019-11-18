@@ -6,6 +6,7 @@
 /dev/block/by-name/cache                 /cache               ext4             defaults                  defaults
 /dev/block/by-name/metadata              /metadata            ext4             defaults                  defaults
 /dev/block/by-name/userdata              /data                f2fs             defaults                  defaults
+/dev/block/by-name/misc                  /misc                emmc             defaults                  defaults
 /dev/block/by-name/uboot                 /uboot               emmc             defaults                  backup,backupname=Uboot,display=Uboot
 /dev/block/by-name/resource              /resource            emmc             defaults                  backup,backupname=Resource,display=Resource
 /dev/block/by-name/boot                  /boot                emmc             defaults                  backup,backupname=Boot,display=Boot

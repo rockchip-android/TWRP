@@ -31,6 +31,7 @@
 #include <sys/param.h>
 #include <fcntl.h>
 
+#include "vendor/vendor.h"
 #include "cutils/properties.h"
 #include "libblkid/include/blkid.h"
 #include "variables.h"
@@ -2011,12 +2012,14 @@ void TWPartition::Check_FS_Type() {
 	if (blkid_do_fullprobe(pr)) {
 		blkid_free_probe(pr);
 		LOGINFO("Can't probe device %s\n", Actual_Block_Device.c_str());
+		Current_File_System = "";
 		return;
 	}
 
 	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
 		blkid_free_probe(pr);
 		LOGINFO("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
+		Current_File_System = "";
 		return;
 	}
 
@@ -2233,6 +2236,11 @@ bool TWPartition::Wipe_RMRF() {
 
 bool TWPartition::Wipe_F2FS() {
 	string command;
+
+	if("/data" == Mount_Point){
+		adj_userdata(Actual_Block_Device.c_str());
+		printf("%s\n", "re init volume");
+	}
 
 	if (TWFunc::Path_Exists("/sbin/mkfs.f2fs")) {
 		if (!UnMount(true))

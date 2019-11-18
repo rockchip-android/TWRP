@@ -216,7 +216,10 @@ int main(int argc, char **argv) {
 				} else
 					LOGERR("argument error specifying zip file\n");
 			} else if (*argptr == 'w') {
-				if (len == 9) {
+				if (len == 8) {
+					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
+						break;
+				}else if (len == 9) {
 					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
 						break;
 				} else if (len == 10) {
