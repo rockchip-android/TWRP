@@ -27,6 +27,8 @@
 #include "tw_atomic.hpp"
 #include "progresstracking.hpp"
 
+#include "vendor/uevent/NetlinkManager.h"
+
 #define MAX_FSTAB_LINE_LENGTH 2048
 
 using namespace std;
@@ -263,11 +265,11 @@ friend class GUIAction;
 friend class PageManager;
 };
 
-class TWPartitionManager
+class TWPartitionManager : public INetLinkReceive
 {
 public:
 	TWPartitionManager();                                                     // Constructor for TWRPartionManager
-	~TWPartitionManager() {}
+	~TWPartitionManager();
 
 public:
 	int Process_Fstab(string Fstab_Filename, bool Display_Error);             // Parses the fstab and populates the partitions
@@ -333,16 +335,18 @@ public:
 	void Set_Active_Slot(const string& Slot);                                 // Sets the active slot to A or B
 	string Get_Active_Slot_Suffix();                                          // Returns active slot _a or _b
 	string Get_Active_Slot_Display();                                         // Returns active slot A or B for display purposes
-	struct pollfd uevent_pfd;                                                 // Used for uevent code
+	//struct pollfd uevent_pfd;                                                 // Used for uevent code
 	void Remove_Uevent_Devices(const string& sysfs_path);                     // Removes subpartitions from the Partitions vector for a matched uevent device
 	void Handle_Uevent(const Uevent_Block_Data& uevent_data);                 // Handle uevent data
-	void setup_uevent();                                                      // Opens the uevent netlink socket
-	Uevent_Block_Data get_event_block_values(char *buf, int len);             // Scans the buffer from uevent data and loads the appropriate data into a Uevent_Block_Data struct for processing
-	void read_uevent();                                                       // Reads uevent data into a buffer
-	void close_uevent();                                                      // Closes the uevent netlink socket
-	void Add_Partition(TWPartition* Part);                                    // Adds a new partition to the Partitions vector
+//	void setup_uevent();                                                      // Opens the uevent netlink socket
+//	Uevent_Block_Data get_event_block_values(char *buf, int len);             // Scans the buffer from uevent data and loads the appropriate data into a Uevent_Block_Data struct for processing
+//	void read_uevent();                                                       // Reads uevent data into a buffer
+//	void close_uevent();                                                      // Closes the uevent netlink socket
+	bool Add_Partition(TWPartition* Part);                                    // Adds a new partition to the Partitions vector
 
 private:
+	bool onMessage(NetlinkEvent *evt);
+
 	void Setup_Settings_Storage_Partition(TWPartition* Part);                 // Sets up settings storage
 	void Setup_Android_Secure_Location(TWPartition* Part);                    // Sets up .android_secure if needed
 	bool Backup_Partition(struct PartitionSettings *part_settings);           // Backup the partitions based on type

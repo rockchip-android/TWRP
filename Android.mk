@@ -72,7 +72,13 @@ LOCAL_SRC_FILES := \
     openrecoveryscript.cpp \
     tarWrite.c \
     twrpAdbBuFifo.cpp \
-    vendor/vendor.c
+    vendor/vendor.c \
+    vendor/uevent/NetlinkEvent.cpp \
+    vendor/uevent/NetlinkHandler.cpp \
+    vendor/uevent/NetlinkListener.cpp \
+    vendor/uevent/NetlinkManager.cpp \
+    vendor/uevent/SocketClient.cpp \
+    vendor/uevent/SocketListener.cpp
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)

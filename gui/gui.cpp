@@ -400,8 +400,8 @@ void set_select_fd() {
 	select_fd = ors_read_fd + 1;
 	if (g_pty_fd >= select_fd)
 		select_fd = g_pty_fd + 1;
-	if (PartitionManager.uevent_pfd.fd >= select_fd)
-		select_fd = PartitionManager.uevent_pfd.fd + 1;
+//	if (PartitionManager.uevent_pfd.fd >= select_fd)
+//		select_fd = PartitionManager.uevent_pfd.fd + 1;
 }
 
 static void setup_ors_command()
@@ -572,9 +572,9 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 		if (g_pty_fd > 0) {
 			FD_SET(g_pty_fd, &fdset);
 		}
-		if (PartitionManager.uevent_pfd.fd > 0) {
-			FD_SET(PartitionManager.uevent_pfd.fd, &fdset);
-		}
+//		if (PartitionManager.uevent_pfd.fd > 0) {
+//			FD_SET(PartitionManager.uevent_pfd.fd, &fdset);
+//		}
 #ifndef TW_OEM_BUILD
 		if (ors_read_fd > 0 && !orsout) { // orsout is non-NULL if a command is still running
 			FD_SET(ors_read_fd, &fdset);
@@ -585,8 +585,10 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 		if (has_data > 0) {
 			if (g_pty_fd > 0 && FD_ISSET(g_pty_fd, &fdset))
 				terminal_pty_read();
-			if (PartitionManager.uevent_pfd.fd > 0 && FD_ISSET(PartitionManager.uevent_pfd.fd, &fdset))
-				PartitionManager.read_uevent();
+//			if (PartitionManager.uevent_pfd.fd > 0 && FD_ISSET(PartitionManager.uevent_pfd.fd, &fdset)){
+//				LOGINFO("select uevent_pfd\n");
+//				PartitionManager.read_uevent();
+//			}
 			if (ors_read_fd > 0 && !orsout && FD_ISSET(ors_read_fd, &fdset))
 				ors_command_read();
 		}

@@ -4,7 +4,7 @@
 /dev/block/by-name/vendor                /vendor              ext4             defaults                  defaults
 /dev/block/by-name/oem                   /oem                 ext4             defaults                  defaults
 /dev/block/by-name/cache                 /cache               ext4             defaults                  defaults
-/dev/block/by-name/metadata              /metadata            ext4             defaults                  defaults
+/dev/block/by-name/metadata              /metadata            ext4             defaults                  defaults,wipeduringfactoryreset
 /dev/block/by-name/userdata              /data                f2fs             defaults                  defaults
 /dev/block/by-name/misc                  /misc                emmc             defaults                  defaults
 /dev/block/by-name/uboot                 /uboot               emmc             defaults                  backup,backupname=Uboot,display=Uboot
@@ -13,4 +13,7 @@
 /dev/block/by-name/recovery              /recovery            emmc             defaults                  defaults
 /dev/block/by-name/trust                 /trust               emmc             defaults                  backup,backupname=Trust,display=Trust
 
-/devices/platform/usb*                   /usb                 auto             defaults                  display=Usb,storage,storagename=Usb,voldmanaged=usb:auto
+/devices/platform/fe3c0000.usb/          /usb1                auto             defaults                  display=Usb1,storage,storagename=Usb1,voldmanaged=usb:auto
+/devices/platform/fe380000.usb/          /usb2                auto             defaults                  display=Usb2,storage,storagename=Usb2,voldmanaged=usb:auto
+/devices/platform/usb1/                  /usb3                auto             defaults                  display=Usb3,storage,storagename=Usb3,voldmanaged=usb:auto
+/devices/platform/usb0/                  /usb4                auto             defaults                  display=Usb4,storage,storagename=Usb4,voldmanaged=usb:auto
