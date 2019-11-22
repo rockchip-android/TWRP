@@ -25,6 +25,10 @@ cc_defaults {
     local_include_dirs: [
         "include",
     ],
+
+    include_dirs: [
+        "bootable/recovery",
+    ],
 }
 
 cc_library_static {
@@ -99,6 +103,7 @@ cc_binary {
     static_libs: [
         "libapplypatch_modes",
         "libapplypatch",
+        "libmtdutils",
         "libedify",
         "libotafault",
         "libotautil",

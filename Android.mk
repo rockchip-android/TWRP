@@ -507,18 +507,21 @@ endif
 # for rockpi
 LOCAL_REQUIRED_MODULES += twrp.emmc.fstab twrp.sd.fstab twrp.nvme.fstab
 
+LOCAL_POST_INSTALL_CMD += \
+    $(hide) cp -f $(PRODUCT_OUT)/obj/ETC/file_contexts.bin_intermediates/file_contexts.concat.tmp $(TARGET_RECOVERY_ROOT_OUT)/file_contexts
+
 include $(BUILD_EXECUTABLE)
 
 # Symlink for file_contexts
-include $(CLEAR_VARS)
+# include $(CLEAR_VARS)
 
-LOCAL_MODULE := file_contexts_text
-LOCAL_MODULE_TAGS := optional
-LOCAL_REQUIRED_MODULES := file_contexts.bin
-LOCAL_POST_INSTALL_CMD := \
-    $(hide) cp -f $(PRODUCT_OUT)/obj/ETC/file_contexts.bin_intermediates/file_contexts.concat.tmp $(TARGET_RECOVERY_ROOT_OUT)/file_contexts
+# LOCAL_MODULE := file_contexts_text
+# LOCAL_MODULE_TAGS := optional
+# LOCAL_REQUIRED_MODULES := file_contexts.bin
+# LOCAL_POST_INSTALL_CMD := \
+#     $(hide) cp -f $(PRODUCT_OUT)/obj/ETC/file_contexts.bin_intermediates/file_contexts.concat.tmp $(TARGET_RECOVERY_ROOT_OUT)/file_contexts
 
-include $(BUILD_PHONY_PACKAGE)
+# include $(BUILD_PHONY_PACKAGE)
 
 ifneq ($(TW_USE_TOOLBOX), true)
 include $(CLEAR_VARS)
@@ -784,10 +787,10 @@ ifeq ($(wildcard system/core/uncrypt/Android.mk),)
 endif
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 22; echo $$?),0)
-    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 26; echo $$?),0)
-        TARGET_GLOBAL_CFLAGS += -DTW_USE_MINUI_WITH_DATA
-        CLANG_TARGET_GLOBAL_CFLAGS += -DTW_USE_MINUI_WITH_DATA
-    endif
+    # ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 26; echo $$?),0)
+    #     TARGET_GLOBAL_CFLAGS += -DTW_USE_MINUI_WITH_DATA
+    #     CLANG_TARGET_GLOBAL_CFLAGS += -DTW_USE_MINUI_WITH_DATA
+    # endif
     include $(commands_TWRP_local_path)/minadbd/Android.mk \
         $(commands_TWRP_local_path)/minui/Android.mk
 else
@@ -804,7 +807,7 @@ include $(commands_TWRP_local_path)/injecttwrp/Android.mk \
     $(commands_TWRP_local_path)/mmcutils/Android.mk \
     $(commands_TWRP_local_path)/bmlutils/Android.mk \
     $(commands_TWRP_local_path)/prebuilt/Android.mk \
-    $(commands_TWRP_local_path)/mtdutils/Android.mk \
+    \
     $(commands_TWRP_local_path)/flashutils/Android.mk \
     $(commands_TWRP_local_path)/pigz/Android.mk \
     $(commands_TWRP_local_path)/libtar/Android.mk \
