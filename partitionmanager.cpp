@@ -502,6 +502,9 @@ int TWPartitionManager::Mount_By_Path(string Path, bool Display_Error) {
 			(*iter)->Mount(Display_Error);
 		}
 	}
+	if(!found && Local_Path == "/system"){
+		return Mount_By_Path("/system_as_root", false);
+	}
 	if (found) {
 		return ret;
 	} else if (Display_Error) {
@@ -526,6 +529,9 @@ int TWPartitionManager::UnMount_By_Path(string Path, bool Display_Error) {
 		} else if ((*iter)->Is_SubPartition && (*iter)->SubPartition_Of == Local_Path) {
 			(*iter)->UnMount(Display_Error);
 		}
+	}
+	if(!found && Local_Path == "/system"){
+		return UnMount_By_Path("/system_as_root", false);
 	}
 	if (found) {
 		return ret;
