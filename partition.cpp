@@ -1120,6 +1120,17 @@ void TWPartition::Setup_Data_Media() {
 void TWPartition::Find_Real_Block_Device(string& Block, bool Display_Error) {
 	char device[PATH_MAX], realDevice[PATH_MAX];
 
+	if(Block.find("by-name") != string::npos){
+		int num = 0;
+		while(access(Block.c_str(), F_OK) != 0){
+			usleep(1000 * 200);
+			num++;
+			if(num >= 5){
+				return;
+			}
+		}
+	}
+
 	strcpy(device, Block.c_str());
 	memset(realDevice, 0, sizeof(realDevice));
 	while (readlink(device, realDevice, sizeof(realDevice)) > 0)
