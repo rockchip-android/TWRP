@@ -32,6 +32,7 @@
 static const size_t BOOTLOADER_MESSAGE_OFFSET_IN_MISC = BOARD_RECOVERY_BLDRMSG_OFFSET;
 static const size_t WIPE_PACKAGE_OFFSET_IN_MISC = 16 * 1024 + BOOTLOADER_MESSAGE_OFFSET_IN_MISC;
 #else
+// Rockchip need 0x4000 f*ck why?
 static const size_t BOOTLOADER_MESSAGE_OFFSET_IN_MISC = 16 * 1024;
 static const size_t WIPE_PACKAGE_OFFSET_IN_MISC = 16 * 1024;
 #endif
