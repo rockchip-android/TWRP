@@ -84,7 +84,9 @@ extern "C" {
 #include <hardware/boot_control.h>
 #endif
 
+extern bool miscCommandGet(int argc, char **argv);
 extern bool datamedia;
+extern bool wipeData;
 
 TWPartitionManager::TWPartitionManager(void) {
 	mtp_was_enabled = false;
@@ -110,7 +112,7 @@ TWPartitionManager::~TWPartitionManager(){
 	NetlinkManager::Instance()->removeListen(this);
 };
 
-int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
+int TWPartitionManager::Process_Fstab(string Fstab_Filename, int argc, char **argv, bool Display_Error) {
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
 	TWPartition* settings_partition = NULL;
@@ -229,6 +231,11 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 	}
 	LOGINFO("Done processing fstab files\n");
 
+	//set misc and get command
+	miscCommandGet(argc, argv);
+	if(wipeData){
+		return true;
+	}
 	std::vector<TWPartition*>::iterator iter;
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		(*iter)->Partition_Post_Processing(Display_Error);

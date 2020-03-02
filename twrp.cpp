@@ -62,9 +62,102 @@ struct selabel_handle *selinux_handle;
 TWPartitionManager PartitionManager;
 int Log_Offset;
 bool datamedia;
+bool wipeData = false;
+bool SkipDecryption = false;
+string Send_Intent = "";
 
 static void Print_Prop(const char *key, const char *name, void *cookie) {
 	printf("%s=%s\n", key, name);
+}
+
+void miscCommandGet(int argc, char **argv){
+	{
+		TWPartition* misc = PartitionManager.Find_Partition_By_Path("/misc");
+		if (misc != NULL) {
+			if (misc->Current_File_System == "emmc") {
+				set_misc_device(misc->Actual_Block_Device.c_str());
+			} else {
+				LOGERR("Only emmc /misc is supported\n");
+			}
+		}
+		get_args(&argc, &argv);
+
+		int index, index2, len;
+		char* argptr;
+		char* ptr;
+		printf("Startup Commands: ");
+		for (index = 1; index < argc; index++) {
+			argptr = argv[index];
+			printf(" '%s'", argv[index]);
+			len = strlen(argv[index]);
+			if (*argptr == '-') {argptr++; len--;}
+			if (*argptr == '-') {argptr++; len--;}
+			if (*argptr == 'u') {
+				ptr = argptr;
+				index2 = 0;
+				while (*ptr != '=' && *ptr != '\n')
+					ptr++;
+				// skip the = before grabbing Zip_File
+				while (*ptr == '=')
+					ptr++;
+				if (*ptr) {
+					string ORSCommand = "install ";
+					ORSCommand.append(ptr);
+
+					// If we have a map of blocks we don't need to mount data.
+					SkipDecryption = *ptr == '@';
+
+					if (!OpenRecoveryScript::Insert_ORS_Command(ORSCommand))
+						break;
+				} else
+					LOGERR("argument error specifying zip file\n");
+			} else if (*argptr == 'w') {
+				if (len == 8) {
+					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n")){
+						wipeData = true;
+						break;
+					}
+				}else if (len == 9) {
+					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n")){
+						wipeData = true;
+						break;
+					}
+				} else if (len == 10) {
+					if (!OpenRecoveryScript::Insert_ORS_Command("wipe cache\n")){
+						wipeData = true;
+						break;
+					}
+				}
+				// Other 'w' items are wipe_ab and wipe_package_size which are related to bricking the device remotely. We will not bother to suppor these as having TWRP probably makes "bricking" the device in this manner useless
+			} else if (*argptr == 'n') {
+				DataManager::SetValue(TW_BACKUP_NAME, gui_parse_text("{@auto_generate}"));
+				if (!OpenRecoveryScript::Insert_ORS_Command("backup BSDCAE\n"))
+					break;
+			} else if (*argptr == 'p') {
+				// Shutdown = true;
+			} else if (*argptr == 's') {
+				if (strncmp(argptr, "send_intent", strlen("send_intent")) == 0) {
+					ptr = argptr + strlen("send_intent") + 1;
+					Send_Intent = *ptr;
+				} else if (strncmp(argptr, "security", strlen("security")) == 0) {
+					LOGINFO("Security update\n");
+				} else if (strncmp(argptr, "sideload", strlen("sideload")) == 0) {
+					if (!OpenRecoveryScript::Insert_ORS_Command("sideload\n"))
+						break;
+				} else if (strncmp(argptr, "stages", strlen("stages")) == 0) {
+					LOGINFO("ignoring stages command\n");
+				}
+			} else if (*argptr == 'r') {
+				if (strncmp(argptr, "reason", strlen("reason")) == 0) {
+					ptr = argptr + strlen("reason") + 1;
+					gui_print("%s\n", ptr);
+				}
+			}
+		}
+		printf("\n");
+	}
+
+	printf("wipeData:%d\n", wipeData);
 }
 
 int main(int argc, char **argv) {
@@ -125,135 +218,56 @@ int main(int argc, char **argv) {
 		fstab_filename += ".fstab";
 	}
 	printf("=> Processing %s\n", fstab_filename.c_str());
-	if (!PartitionManager.Process_Fstab(fstab_filename, 1)) {
+	if (!PartitionManager.Process_Fstab(fstab_filename, argc, argv, 1)) {
 		LOGERR("Failing out of recovery due to problem with fstab.\n");
 		return -1;
 	}
-	PartitionManager.Output_Partition_Logging();
+	if(!wipeData){
+		PartitionManager.Output_Partition_Logging();
+		if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
+			if (TWFunc::Path_Exists("/file_contexts")) {
+				printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
+				rename("/file_contexts", "/file_contexts.bak");
+			}
+			printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
+			rename("/prebuilt_file_contexts", "/file_contexts");
+		}
+		struct selinux_opt selinux_options[] = {
+				{ SELABEL_OPT_PATH, "/file_contexts" }
+		};
+		selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+		if (!selinux_handle)
+			printf("No file contexts for SELinux\n");
+		else
+			printf("SELinux contexts loaded from /file_contexts\n");
+		{ // Check to ensure SELinux can be supported by the kernel
+			char *contexts = NULL;
+
+			if (PartitionManager.Mount_By_Path("/cache", false) && TWFunc::Path_Exists("/cache/recovery")) {
+				lgetfilecon("/cache/recovery", &contexts);
+				if (!contexts) {
+					lsetfilecon("/cache/recovery", "test");
+					lgetfilecon("/cache/recovery", &contexts);
+				}
+			} else {
+				LOGINFO("Could not check /cache/recovery SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n");
+				lgetfilecon("/sbin/teamwin", &contexts);
+			}
+			if (!contexts) {
+				gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
+			} else {
+				free(contexts);
+				gui_msg("full_selinux=Full SELinux support is present.");
+			}
+		}
+
+		PartitionManager.Mount_By_Path("/cache", false);
+	}
 	// Load up all the resources
 	gui_loadResources();
 
-	if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
-		if (TWFunc::Path_Exists("/file_contexts")) {
-			printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
-			rename("/file_contexts", "/file_contexts.bak");
-		}
-		printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
-		rename("/prebuilt_file_contexts", "/file_contexts");
-	}
-	struct selinux_opt selinux_options[] = {
-		{ SELABEL_OPT_PATH, "/file_contexts" }
-	};
-	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
-	if (!selinux_handle)
-		printf("No file contexts for SELinux\n");
-	else
-		printf("SELinux contexts loaded from /file_contexts\n");
-	{ // Check to ensure SELinux can be supported by the kernel
-		char *contexts = NULL;
-
-		if (PartitionManager.Mount_By_Path("/cache", false) && TWFunc::Path_Exists("/cache/recovery")) {
-			lgetfilecon("/cache/recovery", &contexts);
-			if (!contexts) {
-				lsetfilecon("/cache/recovery", "test");
-				lgetfilecon("/cache/recovery", &contexts);
-			}
-		} else {
-			LOGINFO("Could not check /cache/recovery SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n");
-			lgetfilecon("/sbin/teamwin", &contexts);
-		}
-		if (!contexts) {
-			gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
-		} else {
-			free(contexts);
-			gui_msg("full_selinux=Full SELinux support is present.");
-		}
-	}
-
-	PartitionManager.Mount_By_Path("/cache", false);
-
-	bool Shutdown = false;
-	bool SkipDecryption = false;
-	string Send_Intent = "";
-	{
-		TWPartition* misc = PartitionManager.Find_Partition_By_Path("/misc");
-		if (misc != NULL) {
-			if (misc->Current_File_System == "emmc") {
-				set_misc_device(misc->Actual_Block_Device.c_str());
-			} else {
-				LOGERR("Only emmc /misc is supported\n");
-			}
-		}
-		get_args(&argc, &argv);
-
-		int index, index2, len;
-		char* argptr;
-		char* ptr;
-		printf("Startup Commands: ");
-		for (index = 1; index < argc; index++) {
-			argptr = argv[index];
-			printf(" '%s'", argv[index]);
-			len = strlen(argv[index]);
-			if (*argptr == '-') {argptr++; len--;}
-			if (*argptr == '-') {argptr++; len--;}
-			if (*argptr == 'u') {
-				ptr = argptr;
-				index2 = 0;
-				while (*ptr != '=' && *ptr != '\n')
-					ptr++;
-				// skip the = before grabbing Zip_File
-				while (*ptr == '=')
-					ptr++;
-				if (*ptr) {
-					string ORSCommand = "install ";
-					ORSCommand.append(ptr);
-
-					// If we have a map of blocks we don't need to mount data.
-					SkipDecryption = *ptr == '@';
-
-					if (!OpenRecoveryScript::Insert_ORS_Command(ORSCommand))
-						break;
-				} else
-					LOGERR("argument error specifying zip file\n");
-			} else if (*argptr == 'w') {
-				if (len == 8) {
-					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
-						break;
-				}else if (len == 9) {
-					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n"))
-						break;
-				} else if (len == 10) {
-					if (!OpenRecoveryScript::Insert_ORS_Command("wipe cache\n"))
-						break;
-				}
-				// Other 'w' items are wipe_ab and wipe_package_size which are related to bricking the device remotely. We will not bother to suppor these as having TWRP probably makes "bricking" the device in this manner useless
-			} else if (*argptr == 'n') {
-				DataManager::SetValue(TW_BACKUP_NAME, gui_parse_text("{@auto_generate}"));
-				if (!OpenRecoveryScript::Insert_ORS_Command("backup BSDCAE\n"))
-					break;
-			} else if (*argptr == 'p') {
-				Shutdown = true;
-			} else if (*argptr == 's') {
-				if (strncmp(argptr, "send_intent", strlen("send_intent")) == 0) {
-					ptr = argptr + strlen("send_intent") + 1;
-					Send_Intent = *ptr;
-				} else if (strncmp(argptr, "security", strlen("security")) == 0) {
-					LOGINFO("Security update\n");
-				} else if (strncmp(argptr, "sideload", strlen("sideload")) == 0) {
-					if (!OpenRecoveryScript::Insert_ORS_Command("sideload\n"))
-						break;
-				} else if (strncmp(argptr, "stages", strlen("stages")) == 0) {
-					LOGINFO("ignoring stages command\n");
-				}
-			} else if (*argptr == 'r') {
-				if (strncmp(argptr, "reason", strlen("reason")) == 0) {
-					ptr = argptr + strlen("reason") + 1;
-					gui_print("%s\n", ptr);
-				}
-			}
-		}
-		printf("\n");
-	}
+//	bool Shutdown = false;
+	//miscCommandGet(argc, grgv);
 
 	if (crash_counter == 0) {
 		property_list(Print_Prop, NULL);

@@ -79,6 +79,7 @@ static int auto_index = 0; // v2 fstab allows you to specify a mount point of "a
 
 extern struct selabel_handle *selinux_handle;
 extern bool datamedia;
+extern bool wipeData;
 
 struct flag_list {
 	const char *name;
@@ -1383,6 +1384,12 @@ bool TWPartition::Mount(bool Display_Error) {
 		return true;
 	} else if (!Can_Be_Mounted) {
 		return false;
+	}
+
+	if(Mount_Point == "/data" || Mount_Point == "/cache" || Mount_Point == "/metadata"){
+		if(wipeData){
+			return true;
+		}
 	}
 
 	Find_Actual_Block_Device();
