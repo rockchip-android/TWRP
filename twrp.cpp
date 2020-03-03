@@ -112,19 +112,17 @@ void miscCommandGet(int argc, char **argv){
 				} else
 					LOGERR("argument error specifying zip file\n");
 			} else if (*argptr == 'w') {
+				wipeData = true;
 				if (len == 8) {
 					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n")){
-						wipeData = true;
 						break;
 					}
 				}else if (len == 9) {
 					if (!OpenRecoveryScript::Insert_ORS_Command("wipe data\n")){
-						wipeData = true;
 						break;
 					}
 				} else if (len == 10) {
 					if (!OpenRecoveryScript::Insert_ORS_Command("wipe cache\n")){
-						wipeData = true;
 						break;
 					}
 				}

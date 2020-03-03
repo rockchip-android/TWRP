@@ -59,6 +59,7 @@ InfoManager                             DataManager::mData;     // Data that is 
 InfoManager                             DataManager::mConst;    // Data that is constant and will not be saved to settings file
 
 extern bool datamedia;
+extern bool wipeData;
 
 #ifndef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 pthread_mutex_t DataManager::m_valuesLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
@@ -523,6 +524,9 @@ void DataManager::update_tz_environment_variables(void)
 
 void DataManager::SetBackupFolder()
 {
+	if(wipeData)
+		return;
+
 	string str = GetCurrentStoragePath();
 	TWPartition* partition = PartitionManager.Find_Partition_By_Path(str);
 	str += "/TWRP/BACKUPS/";
