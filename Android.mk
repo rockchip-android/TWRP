@@ -557,7 +557,7 @@ endif
 LOCAL_REQUIRED_MODULES += twrp.emmc.fstab twrp.sd.fstab twrp.nvme.fstab
 
 LOCAL_POST_INSTALL_CMD += \
-    $(hide) cp -f $(PRODUCT_OUT)/obj/ETC/file_contexts.bin_intermediates/file_contexts.concat.tmp $(TARGET_RECOVERY_ROOT_OUT)/file_contexts
+    cp -f $(PRODUCT_OUT)/obj/ETC/file_contexts.bin_intermediates/file_contexts.concat.tmp $(TARGET_RECOVERY_ROOT_OUT)/file_contexts
 
 include $(BUILD_EXECUTABLE)
 

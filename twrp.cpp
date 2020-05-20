@@ -216,43 +216,6 @@ int main(int argc, char **argv) {
 	}
 	if(!wipeData){
 		PartitionManager.Output_Partition_Logging();
-		if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
-			if (TWFunc::Path_Exists("/file_contexts")) {
-				printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
-				rename("/file_contexts", "/file_contexts.bak");
-			}
-			printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
-			rename("/prebuilt_file_contexts", "/file_contexts");
-		}
-		struct selinux_opt selinux_options[] = {
-				{ SELABEL_OPT_PATH, "/file_contexts" }
-		};
-		selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
-		if (!selinux_handle)
-			printf("No file contexts for SELinux\n");
-		else
-			printf("SELinux contexts loaded from /file_contexts\n");
-		{ // Check to ensure SELinux can be supported by the kernel
-			char *contexts = NULL;
-
-			if (PartitionManager.Mount_By_Path("/cache", false) && TWFunc::Path_Exists("/cache/recovery")) {
-				lgetfilecon("/cache/recovery", &contexts);
-				if (!contexts) {
-					lsetfilecon("/cache/recovery", "test");
-					lgetfilecon("/cache/recovery", &contexts);
-				}
-			} else {
-				LOGINFO("Could not check /cache/recovery SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n");
-				lgetfilecon("/sbin/teamwin", &contexts);
-			}
-			if (!contexts) {
-				gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
-			} else {
-				free(contexts);
-				gui_msg("full_selinux=Full SELinux support is present.");
-			}
-		}
-
 		PartitionManager.Mount_By_Path("/cache", false);
 	}
 	// Load up all the resources
