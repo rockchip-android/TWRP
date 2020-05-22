@@ -2336,7 +2336,7 @@ bool TWPartition::Wipe_F2FS() {
 			LOGINFO("Error determining mkfs.f2fs version\n");
 			return false;
 		}
-		if (TWFunc::Get_File_Size("/tmp/f2fsversiontest") <= 0) {
+		if (TWFunc::Get_File_Size("/tmp/f2fsversiontest") > 0) {
 			LOGINFO("Using newer mkfs.f2fs\n");
 			unsigned long long dev_sz = TWFunc::IOCTL_Get_Block_Size(Actual_Block_Device.c_str());
 			if (!dev_sz)
